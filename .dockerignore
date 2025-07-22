@@ -1,0 +1,50 @@
+# Build artifacts
+_build/
+_opam/
+*.install
+
+# Git directory
+.git/
+.gitignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Distribution files
+*.tar.gz
+coq-mathcomp-quantum/
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation that's not needed in container
+README.md
+CHANGELOG.md
+LICENSE
+
+# Scripts that might not be needed
+scripts/
+
+# Keep only essential files for building
