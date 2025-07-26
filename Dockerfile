@@ -44,7 +44,7 @@ RUN eval $(opam env) && \
     opam clean
 
 # Copy the opam file first for better Docker layer caching
-COPY --chown=opam:opam coq-mathcomp-quantum.opam ./
+COPY --chown=opam:opam rocq-mathcomp-quantum.opam ./
 
 # Install dependencies with exact versions from opam file
 RUN eval $(opam env) && \

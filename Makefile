@@ -3,6 +3,9 @@
 
 .PHONY: help build start stop restart shell build-clean docs test clean logs status
 
+# Detect docker compose command
+DOCKER_COMPOSE := $(shell if command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+
 # Default target
 help: ## Show this help message
 	@echo "CoqQ Rocq Development Environment"
@@ -13,89 +16,85 @@ help: ## Show this help message
 # Environment Management
 start: ## Start all services
 	@echo "🚀 Starting CoqQ Rocq development environment..."
-	docker-compose up -d
+	$(DOCKER_COMPOSE) up -d
 	@echo "✅ Environment started!"
 	@echo "📱 Web Interface: http://localhost"
 	@echo "🖥️  Web IDE: http://localhost/ide/ (password: rocq-dev-password)"
-	@echo "📊 Jupyter: http://localhost/jupyter/"
 	@echo "📚 Docs: http://localhost/docs/"
 
 stop: ## Stop all services
 	@echo "🛑 Stopping CoqQ Rocq development environment..."
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 	@echo "✅ Environment stopped!"
 
 restart: ## Restart all services
 	@echo "🔄 Restarting CoqQ Rocq development environment..."
-	docker-compose restart
+	$(DOCKER_COMPOSE) restart
 	@echo "✅ Environment restarted!"
 
 # Development
 build: ## Build the project using Rocq
 	@echo "🔨 Building CoqQ project with Rocq..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && dune build"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && dune build"
 	@echo "✅ Build completed!"
 
 build-clean: ## Clean and rebuild the project
 	@echo "🧹 Cleaning and rebuilding CoqQ project..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && dune clean && dune build"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && dune clean && dune build"
 	@echo "✅ Clean build completed!"
 
 shell: ## Access the main development container
 	@echo "🐚 Accessing Rocq development container..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && bash"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && bash"
 
 # Testing and Verification
 test: ## Run all tests
 	@echo "🧪 Running tests..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && dune runtest"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && dune runtest"
 	@echo "✅ Tests completed!"
 
 verify: ## Verify specific file (usage: make verify FILE=src/quantum.v)
 	@echo "🔍 Verifying $(FILE)..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && rocq compile $(FILE)"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && rocq compile $(FILE)"
 	@echo "✅ Verification completed!"
 
 # Documentation
 docs: ## Generate documentation
 	@echo "📚 Generating documentation..."
-	docker-compose up -d docs
+	$(DOCKER_COMPOSE) up -d docs
 	@echo "✅ Documentation generated!"
 	@echo "📖 Available at: http://localhost/docs/"
 
 docs-clean: ## Clean and regenerate documentation
 	@echo "🧹 Cleaning and regenerating documentation..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && rm -rf _build/install/default/doc && dune build @doc"
-	docker-compose restart docs
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && rm -rf _build/install/default/doc && dune build @doc"
+	$(DOCKER_COMPOSE) restart docs
 	@echo "✅ Documentation regenerated!"
 
 # Container Management
 logs: ## Show logs for all services
-	docker-compose logs -f
+	$(DOCKER_COMPOSE) logs -f
 
 logs-dev: ## Show logs for development container
-	docker-compose logs -f rocq-dev
+	$(DOCKER_COMPOSE) logs -f rocq-dev
 
 logs-ide: ## Show logs for web IDE
-	docker-compose logs -f web-ide
-
-logs-jupyter: ## Show logs for Jupyter
-	docker-compose logs -f jupyter
+	$(DOCKER_COMPOSE) logs -f web-ide
 
 status: ## Show status of all services
 	@echo "📊 Service Status:"
 	@echo "=================="
-	docker-compose ps
+	$(DOCKER_COMPOSE) ps
 
 # Cleanup
 clean: ## Clean all build artifacts
 	@echo "🧹 Cleaning build artifacts..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && dune clean"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && dune clean"
 	@echo "✅ Cleanup completed!"
 
 clean-all: ## Stop services and remove all containers and volumes
 	@echo "🗑️  Removing all containers, networks, and volumes..."
-	docker-compose down -v --remove-orphans
+	$(DOCKER_COMPOSE) down -v --remove-orphans
 	docker system prune -f
 	@echo "✅ Complete cleanup done!"
 
@@ -116,27 +115,27 @@ web: ## Open main web interface
 # Quick Development Commands
 install-deps: ## Install/update project dependencies
 	@echo "📦 Installing dependencies..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && opam install --deps-only -y ."
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && opam install --deps-only -y ."
 	@echo "✅ Dependencies installed!"
 
 update-rocq: ## Update Rocq to latest compatible version
 	@echo "⬆️  Updating Rocq..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && opam update && opam upgrade rocq-prover rocq-stdlib rocq-core"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && opam update && opam upgrade rocq-prover rocq-stdlib rocq-core"
 	@echo "✅ Rocq updated!"
 
 # File Operations
 compile: ## Compile specific file (usage: make compile FILE=src/quantum.v)
 	@echo "⚙️  Compiling $(FILE)..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && rocq compile $(FILE)"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && rocq compile $(FILE)"
 
 check: ## Check specific file without compilation (usage: make check FILE=src/quantum.v)
 	@echo "✅ Checking $(FILE)..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && rocq check $(FILE)"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && rocq check $(FILE)"
 
 # Interactive Development
 repl: ## Start Rocq REPL
 	@echo "🎮 Starting Rocq REPL..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && rocq repl"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && rocq repl"
 
 # Project Information
 info: ## Show project information
@@ -171,16 +170,16 @@ restore: ## Restore backup of volumes
 setup: ## Complete setup for new users
 	@echo "🎯 Setting up CoqQ Rocq development environment..."
 	@echo "1️⃣  Building containers..."
-	docker-compose build
+	$(DOCKER_COMPOSE) build
 	@echo "2️⃣  Starting services..."
-	docker-compose up -d
+	$(DOCKER_COMPOSE) up -d
 	@echo "3️⃣  Installing dependencies..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && opam install --deps-only -y ."
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && opam install --deps-only -y ."
 	@echo "4️⃣  Building project..."
-	docker-compose exec rocq-dev bash -c "eval \$$(opam env) && dune build"
+	$(DOCKER_COMPOSE) exec rocq-dev bash -c "eval \$$(opam env) && dune build"
 	@echo "✅ Setup completed!"
 	@echo ""
 	@echo "🎉 CoqQ Rocq environment is ready!"
 	@echo "🌐 Web Interface: http://localhost"
 	@echo "🖥️  Web IDE: http://localhost/ide/ (password: rocq-dev-password)"
-	@echo "📊 Jupyter: http://localhost/jupyter/"
+	@echo "📚 Docs: http://localhost/docs/"

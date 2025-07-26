@@ -63,20 +63,26 @@ check_requirements() {
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed. Please install Docker Compose first."
+    # Check for both docker-compose and docker compose
+    DOCKER_COMPOSE_CMD=""
+    if command -v docker-compose &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+    elif docker compose version &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker compose"
+    else
+        print_error "Docker Compose is not available. Please install Docker Compose first."
         echo "Visit: https://docs.docker.com/compose/install/"
         exit 1
     fi
     
-    print_success "Docker and Docker Compose are available"
+    print_success "Docker and Docker Compose are available (using: $DOCKER_COMPOSE_CMD)"
 }
 
 build_images() {
     print_step "$ROCKET" "Building Docker images..."
     print_info "This may take 10-15 minutes on first run..."
     
-    if docker-compose build; then
+    if $DOCKER_COMPOSE_CMD build; then
         print_success "Docker images built successfully"
     else
         print_error "Failed to build Docker images"
@@ -87,7 +93,7 @@ build_images() {
 start_services() {
     print_step "$COMPUTER" "Starting services..."
     
-    if docker-compose up -d; then
+    if $DOCKER_COMPOSE_CMD up -d; then
         print_success "All services started successfully"
     else
         print_error "Failed to start services"
@@ -100,7 +106,7 @@ wait_for_services() {
     
     # Wait for main container to be ready
     for i in {1..30}; do
-        if docker-compose exec -T rocq-dev echo "ready" &> /dev/null; then
+        if $DOCKER_COMPOSE_CMD exec -T rocq-dev echo "ready" &> /dev/null; then
             break
         fi
         if [ $i -eq 30 ]; then
@@ -116,7 +122,7 @@ wait_for_services() {
 install_dependencies() {
     print_step "📦" "Installing project dependencies..."
     
-    if docker-compose exec -T rocq-dev bash -c "eval \$(opam env) && opam install --deps-only -y ."; then
+    if $DOCKER_COMPOSE_CMD exec -T rocq-dev bash -c "eval \$(opam env) && opam install --deps-only -y ."; then
         print_success "Dependencies installed successfully"
     else
         print_warning "Some dependencies might have installation issues"
@@ -127,7 +133,7 @@ install_dependencies() {
 build_project() {
     print_step "🔨" "Building CoqQ project..."
     
-    if docker-compose exec -T rocq-dev bash -c "eval \$(opam env) && dune build"; then
+    if $DOCKER_COMPOSE_CMD exec -T rocq-dev bash -c "eval \$(opam env) && dune build"; then
         print_success "Project built successfully"
     else
         print_warning "Build encountered some issues"
@@ -160,7 +166,7 @@ show_access_info() {
 show_status() {
     echo ""
     print_step "📊" "Service Status:"
-    docker-compose ps
+    $DOCKER_COMPOSE_CMD ps
 }
 
 # Main execution
@@ -192,25 +198,46 @@ main() {
 # Handle script arguments
 case "${1:-}" in
     "status")
-        docker-compose ps
+        # Detect docker compose command
+        if command -v docker-compose &> /dev/null; then
+            docker-compose ps
+        else
+            docker compose ps
+        fi
         ;;
     "stop")
         print_step "🛑" "Stopping all services..."
-        docker-compose down
+        if command -v docker-compose &> /dev/null; then
+            docker-compose down
+        else
+            docker compose down
+        fi
         print_success "All services stopped"
         ;;
     "restart")
         print_step "🔄" "Restarting services..."
-        docker-compose restart
+        if command -v docker-compose &> /dev/null; then
+            docker-compose restart
+        else
+            docker compose restart
+        fi
         print_success "Services restarted"
         show_access_info
         ;;
     "logs")
-        docker-compose logs -f
+        if command -v docker-compose &> /dev/null; then
+            docker-compose logs -f
+        else
+            docker compose logs -f
+        fi
         ;;
     "clean")
         print_step "🧹" "Cleaning up..."
-        docker-compose down -v --remove-orphans
+        if command -v docker-compose &> /dev/null; then
+            docker-compose down -v --remove-orphans
+        else
+            docker compose down -v --remove-orphans
+        fi
         docker system prune -f
         print_success "Cleanup completed"
         ;;

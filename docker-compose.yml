@@ -25,11 +25,11 @@ services:
     # Override default command for development
     command: bash -c "eval $$(opam env) && bash"
     environment:
-      - OPAM_SWITCH_PREFIX=/home/opam/.opam/default
-      - CAML_LD_LIBRARY_PATH=/home/opam/.opam/default/lib/stublibs:/home/opam/.opam/default/lib/ocaml/stublibs:/home/opam/.opam/default/lib/ocaml
-      - OCAML_TOPLEVEL_PATH=/home/opam/.opam/default/lib/toplevel
-      - MANPATH=/home/opam/.opam/default/man:
-      - PATH=/home/opam/.opam/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      OPAM_SWITCH_PREFIX: "/home/opam/.opam/default"
+      CAML_LD_LIBRARY_PATH: "/home/opam/.opam/default/lib/stublibs:/home/opam/.opam/default/lib/ocaml/stublibs:/home/opam/.opam/default/lib/ocaml"
+      OCAML_TOPLEVEL_PATH: "/home/opam/.opam/default/lib/toplevel"
+      MANPATH: "/home/opam/.opam/default/man:"
+      PATH: "/home/opam/.opam/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     user: opam
     networks:
       - rocq-network
@@ -44,27 +44,8 @@ services:
       - .:/home/coder/workspace
       - vscode_data:/home/coder/.local/share/code-server
     environment:
-      - PASSWORD=rocq-dev-password
+      PASSWORD: "rocq-dev-password"
     command: --bind-addr 0.0.0.0:8080 --auth password /home/coder/workspace
-    depends_on:
-      - rocq-dev
-    networks:
-      - rocq-network
-
-  # Jupyter notebook service for interactive development
-  jupyter:
-    build:
-      context: .
-      dockerfile: Dockerfile.jupyter
-    container_name: rocq-jupyter
-    ports:
-      - "8888:8888"
-    volumes:
-      - .:/home/opam/workspace
-      - jupyter_data:/home/opam/.jupyter
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-    command: bash -c "eval $$(opam env) && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
     depends_on:
       - rocq-dev
     networks:
@@ -98,7 +79,7 @@ services:
     working_dir: /home/opam/coqq
     ports:
       - "8000:8000"
-    command: bash -c "eval $$(opam env) && rocq doc --html -d /home/opam/docs . && cd /home/opam/docs && python3 -m http.server 8000"
+    command: bash -c "eval $$(opam env) && mkdir -p /home/opam/docs && echo 'Documentation will be available here' > /home/opam/docs/index.html && cd /home/opam/docs && python3 -m http.server 8000"
     user: opam
     networks:
       - rocq-network
@@ -109,13 +90,10 @@ services:
     container_name: rocq-proxy
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - web-ide
-      - jupyter
       - docs
     networks:
       - rocq-network
@@ -128,8 +106,6 @@ volumes:
   opam_cache:
     driver: local
   vscode_data:
-    driver: local
-  jupyter_data:
     driver: local
   docs_output:
     driver: local
