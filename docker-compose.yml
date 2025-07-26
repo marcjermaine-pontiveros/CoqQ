@@ -1,18 +1,24 @@
 version: '3.8'
 
 services:
-  coqq:
+  # Main development environment with Rocq
+  rocq-dev:
     build:
       context: .
       dockerfile: Dockerfile
-    image: coqq:latest
-    container_name: coqq-dev
+    image: coqq-rocq:latest
+    container_name: rocq-dev
     volumes:
       # Mount source code for development
       - .:/home/opam/coqq
       # Persist opam cache
       - opam_cache:/home/opam/.opam
+      # Persist VS Code server data
+      - vscode_data:/home/opam/.vscode-server
     working_dir: /home/opam/coqq
+    ports:
+      - "8080:8080"  # Web IDE port
+      - "3000:3000"  # Additional dev server port
     # Keep container running for interactive development
     tty: true
     stdin_open: true
@@ -25,20 +31,105 @@ services:
       - MANPATH=/home/opam/.opam/default/man:
       - PATH=/home/opam/.opam/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     user: opam
+    networks:
+      - rocq-network
+
+  # Web IDE service using VS Code Server
+  web-ide:
+    image: codercom/code-server:latest
+    container_name: rocq-web-ide
+    ports:
+      - "8443:8080"  # Web IDE interface
+    volumes:
+      - .:/home/coder/workspace
+      - vscode_data:/home/coder/.local/share/code-server
+    environment:
+      - PASSWORD=rocq-dev-password
+    command: --bind-addr 0.0.0.0:8080 --auth password /home/coder/workspace
+    depends_on:
+      - rocq-dev
+    networks:
+      - rocq-network
+
+  # Jupyter notebook service for interactive development
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: rocq-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/opam/workspace
+      - jupyter_data:/home/opam/.jupyter
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: bash -c "eval $$(opam env) && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+    depends_on:
+      - rocq-dev
+    networks:
+      - rocq-network
 
   # Service for building only (no interactive shell)
-  coqq-build:
+  rocq-build:
     build:
       context: .
       dockerfile: Dockerfile
-    image: coqq:latest
-    container_name: coqq-build
+    image: coqq-rocq:latest
+    container_name: rocq-build
     volumes:
       - .:/home/opam/coqq
     working_dir: /home/opam/coqq
     command: bash -c "eval $$(opam env) && dune build"
     user: opam
+    networks:
+      - rocq-network
+
+  # Documentation generator service
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: coqq-rocq:latest
+    container_name: rocq-docs
+    volumes:
+      - .:/home/opam/coqq
+      - docs_output:/home/opam/docs
+    working_dir: /home/opam/coqq
+    ports:
+      - "8000:8000"
+    command: bash -c "eval $$(opam env) && rocq doc --html -d /home/opam/docs . && cd /home/opam/docs && python3 -m http.server 8000"
+    user: opam
+    networks:
+      - rocq-network
+
+  # Reverse proxy for unified access
+  nginx:
+    image: nginx:alpine
+    container_name: rocq-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web-ide
+      - jupyter
+      - docs
+    networks:
+      - rocq-network
+
+networks:
+  rocq-network:
+    driver: bridge
 
 volumes:
   opam_cache:
+    driver: local
+  vscode_data:
+    driver: local
+  jupyter_data:
+    driver: local
+  docs_output:
     driver: local

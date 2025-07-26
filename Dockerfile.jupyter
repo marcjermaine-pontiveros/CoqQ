@@ -1,0 +1,73 @@
+# Use the main Rocq image as base
+FROM ocaml/opam:debian-12-ocaml-4.14
+
+# Set working directory
+WORKDIR /home/opam/workspace
+
+# Switch to root to install system dependencies
+USER root
+
+# Install system dependencies including Jupyter
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    curl \
+    wget \
+    m4 \
+    pkg-config \
+    libgmp-dev \
+    python3 \
+    python3-pip \
+    python3-dev \
+    nodejs \
+    npm \
+    && pip3 install --upgrade pip \
+    && pip3 install jupyter jupyterlab \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to opam user
+USER opam
+
+# Initialize opam and update
+RUN opam init --disable-sandboxing -y && opam update
+
+# Add the Rocq repository
+RUN opam repo add rocq-released https://rocq-prover.org/opam/released
+
+# Add the default repositories
+RUN opam repo add default https://opam.ocaml.org || true
+RUN opam repo add coq-released https://coq.inria.fr/opam/released || true
+
+# Install Rocq 9.0.0 and related tools
+RUN eval $(opam env) && \
+    opam install -y rocq-prover.9.0.0 rocq-stdlib dune && \
+    opam clean
+
+# Install Jupyter kernel for OCaml
+RUN eval $(opam env) && \
+    opam install -y jupyter && \
+    opam clean
+
+# Copy the opam file and install dependencies
+COPY --chown=opam:opam coq-mathcomp-quantum.opam ./
+RUN eval $(opam env) && \
+    opam install -y --deps-only . && \
+    opam clean
+
+# Install Jupyter kernel
+RUN eval $(opam env) && \
+    jupyter kernelspec install --user $(opam var prefix)/share/jupyter --name=ocaml-jupyter
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# Set up Jupyter configuration
+RUN mkdir -p /home/opam/.jupyter && \
+    echo "c.NotebookApp.ip = '0.0.0.0'" > /home/opam/.jupyter/jupyter_notebook_config.py && \
+    echo "c.NotebookApp.port = 8888" >> /home/opam/.jupyter/jupyter_notebook_config.py && \
+    echo "c.NotebookApp.open_browser = False" >> /home/opam/.jupyter/jupyter_notebook_config.py && \
+    echo "c.NotebookApp.allow_root = True" >> /home/opam/.jupyter/jupyter_notebook_config.py
+
+# Default command
+CMD ["bash", "-c", "eval $(opam env) && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"]

@@ -3,12 +3,20 @@ _build/
 _opam/
 *.install
 
+# Rocq/Coq compiled files
+*.vo
+*.vos
+*.vok
+*.glob
+
 # Git directory
 .git/
 .gitignore
 
-# Editor files
-.vscode/
+# Editor files (keep VS Code workspace settings)
+.vscode/settings.json.user
+.vscode/launch.json
+.vscode/tasks.json
 .idea/
 *.swp
 *.swo
@@ -33,6 +41,7 @@ Thumbs.db
 # Distribution files
 *.tar.gz
 coq-mathcomp-quantum/
+rocq-mathcomp-quantum/
 
 # Docker files
 Dockerfile*
@@ -44,7 +53,38 @@ README.md
 CHANGELOG.md
 LICENSE
 
-# Scripts that might not be needed
+# Scripts
+start.sh
 scripts/
+
+# NodeJS/NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Backup files
+*_backup.tar.gz
+
+# SSL certificates
+ssl/
+
+# Documentation build
+docs/
+_docs/
+
+# Testing artifacts
+.coverage
+test-reports/
 
 # Keep only essential files for building
