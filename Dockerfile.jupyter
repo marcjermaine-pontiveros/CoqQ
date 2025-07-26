@@ -1,0 +1,116 @@
+# Use the main Rocq image as base
+FROM ocaml/opam:debian-12-ocaml-4.14
+
+# Set working directory
+WORKDIR /home/opam
+
+# Switch to root to install system dependencies
+USER root
+
+# Install system dependencies including Jupyter
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    curl \
+    wget \
+    m4 \
+    pkg-config \
+    libgmp-dev \
+    python3 \
+    python3-pip \
+    python3-dev \
+    nodejs \
+    npm \
+    && pip3 install --upgrade pip \
+    && pip3 install jupyter jupyterlab notebook ipywidgets \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to opam user
+USER opam
+
+# Initialize opam and update
+RUN opam init --disable-sandboxing -y && opam update
+
+# Add the Rocq repository
+RUN opam repo add rocq-released https://rocq-prover.org/opam/released
+
+# Add the default repositories
+RUN opam repo add default https://opam.ocaml.org || true
+RUN opam repo add coq-released https://coq.inria.fr/opam/released || true
+
+# Install Rocq 9.0.0 and related tools
+RUN eval $(opam env) && \
+    opam install -y rocq-prover.9.0.0 rocq-stdlib dune && \
+    opam clean
+
+# Try to install OCaml Jupyter kernel (optional, might not be available for Rocq yet)
+RUN eval $(opam env) && \
+    (opam install -y jupyter || echo "OCaml Jupyter kernel not available, continuing...") && \
+    opam clean
+
+# Copy the opam file and install dependencies
+COPY --chown=opam:opam rocq-mathcomp-quantum.opam ./
+RUN eval $(opam env) && \
+    opam install -y --deps-only . && \
+    opam clean
+
+# Create directories for notebooks and workspace
+RUN mkdir -p /home/opam/notebooks /home/opam/workspace
+
+# Create a simple notebook example
+RUN echo '{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Welcome to CoqQ Rocq Development\\n",
+    "\\n",
+    "This is a Jupyter Lab environment for interactive development with Rocq.\\n",
+    "\\n",
+    "## Getting Started\\n",
+    "\\n",
+    "1. Use the terminal to run Rocq commands\\n",
+    "2. Create new notebooks for documentation and exploration\\n",
+    "3. Access your project files in the workspace folder\\n",
+    "\\n",
+    "## Quick Commands\\n",
+    "\\n",
+    "In the terminal, you can use:\\n",
+    "- `rocq --version` - Check Rocq version\\n",
+    "- `dune build` - Build the project\\n",
+    "- `rocq compile file.v` - Compile a specific file"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "name": "python",
+   "version": "3.11.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}' > /home/opam/notebooks/Welcome.ipynb
+
+# Set up Jupyter configuration
+RUN mkdir -p /home/opam/.jupyter && \
+    echo "c.ServerApp.ip = '0.0.0.0'" > /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.port = 8888" >> /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.open_browser = False" >> /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.allow_root = True" >> /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.token = ''" >> /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.password = ''" >> /home/opam/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.notebook_dir = '/home/opam'" >> /home/opam/.jupyter/jupyter_lab_config.py
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# Default command
+CMD ["bash", "-c", "eval $(opam env) && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --LabApp.token='' --LabApp.password='' --notebook-dir=/home/opam"]
