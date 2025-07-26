@@ -34,12 +34,14 @@ make start
 
 - **🌐 Main Dashboard**: http://localhost
 - **🖥️ Web IDE**: http://localhost/ide/ (password: `rocq-dev-password`)
+- **📊 Jupyter Lab**: http://localhost/jupyter/
 - **📚 Documentation**: http://localhost/docs/
 
 ## What You Get
 
 ✅ **Rocq Prover 9.0** - Latest theorem prover  
 ✅ **Web IDE** - VS Code in your browser  
+✅ **Jupyter Lab** - Interactive notebooks for exploration  
 ✅ **Documentation** - Auto-generated project docs  
 ✅ **Persistent Storage** - Your work is saved between sessions  
 ✅ **Zero Config** - Everything pre-configured  
@@ -83,6 +85,12 @@ make clean-all
 - Rocq language support with syntax highlighting
 - Integrated terminal for building and testing
 - File explorer and search functionality
+
+### Using Jupyter Lab
+- Interactive notebooks for exploration and documentation
+- Mix code, markdown, and mathematical notation
+- Perfect for learning, prototyping, and analysis
+- Persistent notebooks saved between sessions
 
 ### Building and Testing
 ```bash

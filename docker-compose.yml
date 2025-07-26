@@ -51,6 +51,28 @@ services:
     networks:
       - rocq-network
 
+  # Jupyter Lab service for interactive development
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: rocq-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/opam/workspace
+      - jupyter_data:/home/opam/.jupyter
+      - notebooks:/home/opam/notebooks
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: ""
+      JUPYTER_PASSWORD: ""
+    command: bash -c "eval $$(opam env) && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --LabApp.token='' --LabApp.password='' --notebook-dir=/home/opam"
+    depends_on:
+      - rocq-dev
+    networks:
+      - rocq-network
+
   # Service for building only (no interactive shell)
   rocq-build:
     build:
@@ -94,6 +116,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web-ide
+      - jupyter
       - docs
     networks:
       - rocq-network
@@ -106,6 +129,10 @@ volumes:
   opam_cache:
     driver: local
   vscode_data:
+    driver: local
+  jupyter_data:
+    driver: local
+  notebooks:
     driver: local
   docs_output:
     driver: local

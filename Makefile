@@ -20,6 +20,7 @@ start: ## Start all services
 	@echo "✅ Environment started!"
 	@echo "📱 Web Interface: http://localhost"
 	@echo "🖥️  Web IDE: http://localhost/ide/ (password: rocq-dev-password)"
+	@echo "📊 Jupyter Lab: http://localhost/jupyter/"
 	@echo "📚 Docs: http://localhost/docs/"
 
 stop: ## Stop all services
@@ -81,6 +82,9 @@ logs-dev: ## Show logs for development container
 logs-ide: ## Show logs for web IDE
 	$(DOCKER_COMPOSE) logs -f web-ide
 
+logs-jupyter: ## Show logs for Jupyter
+	$(DOCKER_COMPOSE) logs -f jupyter
+
 status: ## Show status of all services
 	@echo "📊 Service Status:"
 	@echo "=================="
@@ -107,6 +111,7 @@ ide: ## Open Web IDE
 jupyter: ## Open Jupyter Lab
 	@echo "📊 Opening Jupyter Lab..."
 	@echo "🌐 Jupyter available at: http://localhost/jupyter/"
+	@echo "📝 Create notebooks for interactive development and documentation"
 
 web: ## Open main web interface
 	@echo "🌐 Opening main web interface..."
@@ -182,4 +187,5 @@ setup: ## Complete setup for new users
 	@echo "🎉 CoqQ Rocq environment is ready!"
 	@echo "🌐 Web Interface: http://localhost"
 	@echo "🖥️  Web IDE: http://localhost/ide/ (password: rocq-dev-password)"
+	@echo "📊 Jupyter Lab: http://localhost/jupyter/"
 	@echo "📚 Docs: http://localhost/docs/"
