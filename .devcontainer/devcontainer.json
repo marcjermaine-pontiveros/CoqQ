@@ -1,0 +1,41 @@
+{
+  "name": "CoqQ Development Environment",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/home/vscode/coqq",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "maximedenes.vscode-coq",
+        "ms-vscode.makefile-tools",
+        "ms-vscode.cpptools-extension-pack"
+      ],
+      "settings": {
+        "coq.loadCoqProject": true,
+        "[coq]": {
+          "editor.defaultFormatter": "maximedenes.vscode-coq"
+        }
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "cd /home/vscode/coqq && opam config exec -- make --version && echo 'Environment ready!'",
+  "postStartCommand": "cd /home/vscode/coqq && opam config exec -- bash",
+  "remoteEnv": {
+    "PATH": "/home/opam/.opam/default/bin:${containerEnv:PATH}"
+  },
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,readonly"
+  ],
+  "forwardPorts": [],
+  "portsAttributes": {},
+  "otherPortsAttributes": {
+    "onAutoForward": "notify"
+  }
+}

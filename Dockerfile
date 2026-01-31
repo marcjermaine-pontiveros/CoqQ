@@ -43,13 +43,50 @@ RUN eval $(opam env) && \
 # Copy the rest of the project
 COPY --chown=opam:opam . .
 
-# Set up the environment
+# Set up the environment and build the project
 RUN eval $(opam env) && opam config exec -- dune build
 
-# Default command
-CMD ["bash", "-c", "eval $(opam env) && bash"]
+# Switch to root to create vscode user and install additional tools
+USER root
 
-# Expose any ports if needed (none required for this project)
+# Create vscode user for VS Code Server compatibility
+RUN useradd -m -s /bin/bash vscode && \
+    usermod -aG sudo vscode && \
+    echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode
+
+# Install additional development tools useful for VS Code
+RUN apt-get update && apt-get install -y \
+    git-core \
+    openssh-client \
+    openssh-server \
+    sudo \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built artifacts to make them accessible
+RUN mkdir -p /home/vscode/coqq && \
+    cp -r /home/opam/coqq/* /home/vscode/coqq/ 2>/dev/null || true && \
+    cp -r /home/opam/.opam /home/vscode/.opam && \
+    chown -R vscode:vscode /home/vscode
+
+# Switch back to opam for setting up OPAM environment
+USER opam
+
+# Configure opam profile for all users
+RUN opam env >> /home/opam/.bashrc && \
+    eval $(opam env)
+
+# Copy opam env to vscode user
+USER root
+RUN eval $(opam env --switch=/home/opam/.opam/default) && \
+    echo 'eval $(opam env --switch=/home/opam/.opam/default)' >> /home/vscode/.bashrc && \
+    chown vscode:vscode /home/vscode/.bashrc
+
+USER vscode
+
+# Default command
+CMD ["bash"]
 
 # Add labels for documentation
 LABEL maintainer="CoqQ Development Team"
