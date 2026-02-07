@@ -7,7 +7,7 @@ NAME     := coq-mathcomp-quantum
 DISTDIR  := $(NAME)
 SED      := sed
 TAR      := tar
-REPO     := default=https://opam.ocaml.org,coq-released=https://coq.inria.fr/opam/released
+REPO     := default=https://opam.ocaml.org,rocq-released=https://rocq-prover.org/opam/released,coq-released=https://coq.inria.fr/opam/released
 
 # --------------------------------------------------------------------
 .PHONY: default build build-local opam clean mrproper dist distcheck

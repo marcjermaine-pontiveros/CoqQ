@@ -3,8 +3,8 @@
 We depend on the following external libraries:
 
 ```
-  "coq"                      { = "8.18.0"           }
-  "coq-core"                 { = "8.18.0"           }
+  "coq"                      { = "9.0.0"            }
+  "coq-core"                 { = "9.0.0"            }
   "coq-elpi"                 { = "2.0.0"            }
   "dune"                     {>= "3.2" & <= "3.13.0"}
   "dune-configurator"        { = "3.12.1"           }
@@ -23,7 +23,7 @@ The easiest way to install the above libraries is via [OPAM](https://opam.ocaml.
 opam switch create \
     --yes \
     --deps-only \
-    --repositories=default=https://opam.ocaml.org,coq-released=https://coq.inria.fr/opam/released \
+    --repositories=default=https://opam.ocaml.org,rocq-released=https://rocq-prover.org/opam/released,coq-released=https://coq.inria.fr/opam/released \
     .
 ```
 
@@ -32,9 +32,34 @@ config exec -- make` if you used a local opam switch to install the
 dependencies).
 
 Remark: if any unexpected error occurs, please follow the exact version of the 
-above libraries. It's known that dune-configurator >= 3.13.0 will kill the 
-compilation (incompatible with coq.8.18.0 if use `-(notation)` attribute 
-for importing files).
+above libraries. It's known that dune-configurator >= 3.13.0 may break the 
+compilation (was incompatible with Coq 8.18 when using `-(notation)` attribute
+for importing files). With Rocq 9.0, we still pin dune-configurator to 3.12.1.
+
+## macOS instructions (Rocq Prover 9.0)
+
+You can install Rocq Prover 9.0 on macOS either via the Rocq Platform app or via opam.
+
+- Rocq Platform (recommended):
+  1. Download the latest DMG from the Rocq Platform releases page.
+  2. Drag the app into `/Applications` and open it once via right-click → Open.
+  3. Optional: add binaries to PATH for terminal use:
+     ```bash
+     export PATH="/Applications/Coq_Platform_2025.01.0.app/Contents/Resources/bin:$PATH"
+     ```
+  4. Verify: `coqtop -v` should show Rocq 9.0.
+
+- Opam (command-line):
+  1. Install opam (e.g., via Homebrew: `brew install opam`).
+  2. Initialize: `opam init -y && eval $(opam env)`.
+  3. Add repos and install deps:
+     ```bash
+     opam repo add rocq-released https://rocq-prover.org/opam/released
+     opam repo add default https://opam.ocaml.org || true
+     opam repo add coq-released https://coq.inria.fr/opam/released || true
+     opam switch create --yes --deps-only --repositories=default=https://opam.ocaml.org,rocq-released=https://rocq-prover.org/opam/released,coq-released=https://coq.inria.fr/opam/released .
+     ```
+  4. Build the project: `opam config exec -- make`.
 
 <br>
 
